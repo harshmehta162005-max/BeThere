@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Search, MapPin, Calendar, Loader2 } from "lucide-react";
-import { State, City } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 import { format } from "date-fns";
 import { useConvexQuery, useConvexMutation } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
@@ -39,17 +39,21 @@ export default function SearchLocationBar() {
         searchQuery.trim().length >= 2 ? { query: searchQuery, limit: 5 } : "skip"
     );
 
-    const indianStates = useMemo(() => State.getStatesOfCountry("IN"), []);
-
+    const countries = useMemo(() => Country.getAllCountries(), []);
+    const [selectedCountry, setSelectedCountry] = useState("IN");
     const [selectedState, setSelectedState] = useState("");
     const [selectedCity, setSelectedCity] = useState("");
 
     useEffect(() => {
         if (currentUser?.location) {
+            const countryCode =
+                countries.find((c) => c.name === currentUser.location.country)?.isoCode ||
+                "IN";
+            setSelectedCountry(countryCode);
             setSelectedState(currentUser.location.state || "");
             setSelectedCity(currentUser.location.city || "");
         }
-    }, [currentUser, isLoading]);
+    }, [currentUser, isLoading, countries]);
 
     function debounce(func, wait) {
         let timeout;
@@ -63,12 +67,26 @@ export default function SearchLocationBar() {
         };
     }
 
+    const states = useMemo(() => {
+        if (!selectedCountry) return [];
+        return State.getStatesOfCountry(selectedCountry);
+    }, [selectedCountry]);
+
     const cities = useMemo(() => {
         if (!selectedState) return [];
-        const state = indianStates.find((s) => s.name === selectedState);
+        const state = states.find((s) => s.name === selectedState);
         if (!state) return [];
-        return City.getCitiesOfState("IN", state.isoCode);
-    }, [selectedState, indianStates]);
+        return City.getCitiesOfState(selectedCountry, state.isoCode);
+    }, [selectedState, selectedCountry, states]);
+
+    useEffect(() => {
+        if (!selectedCountry) return;
+        const stateExists = states.some((s) => s.name === selectedState);
+        if (!stateExists) {
+            setSelectedState("");
+            setSelectedCity("");
+        }
+    }, [selectedCountry, states, selectedState]);
 
     const debouncedSetQuery = useRef(
         debounce((value) => setSearchQuery(value), 300)
@@ -88,13 +106,23 @@ export default function SearchLocationBar() {
 
     const handleLocationSelect = async (city, state) => {
         try {
-            if (currentUser?.interests && currentUser?.location) {
+            if (currentUser?.interests) {
                 await updateLocation({
-                    location: { city, state, country: "India" },
+                    location: {
+                        city,
+                        state,
+                        country:
+                            countries.find((c) => c.isoCode === selectedCountry)?.name ||
+                            "India",
+                    },
                     interests: currentUser.interests,
                 });
             }
-            const slug = createLocationSlug(city, state);
+            const slug = createLocationSlug(
+                city,
+                state,
+                countries.find((c) => c.isoCode === selectedCountry)?.name || "India"
+            );
             router.push(`/explore/${slug}`);
         } catch (error) {
             console.error("Failed to update location:", error);
@@ -161,6 +189,11 @@ export default function SearchLocationBar() {
                                                     <span className="flex items-center gap-1">
                                                         <MapPin className="w-3 h-3" />
                                                         {event.city}
+                                                        {event.state
+                                                            ? `, ${event.state}`
+                                                            : event.country
+                                                                ? `, ${event.country}`
+                                                                : ""}
                                                     </span>
                                                 </div>
                                             </div>
@@ -178,6 +211,27 @@ export default function SearchLocationBar() {
                 )}
             </div>
 
+            {/* Country Select */}
+            <Select
+                value={selectedCountry}
+                onValueChange={(value) => {
+                    setSelectedCountry(value);
+                    setSelectedState("");
+                    setSelectedCity("");
+                }}
+            >
+                <SelectTrigger className="w-32 h-9 border-l-0 rounded-none">
+                    <SelectValue placeholder="Country" />
+                </SelectTrigger>
+                <SelectContent>
+                    {countries.map((country) => (
+                        <SelectItem key={country.isoCode} value={country.isoCode}>
+                            {country.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
             {/* State Select */}
             <Select
                 value={selectedState}
@@ -185,13 +239,14 @@ export default function SearchLocationBar() {
                     setSelectedState(value);
                     setSelectedCity("");
                 }}
+                disabled={!selectedCountry}
             >
                 <SelectTrigger className="w-32 h-9 border-l-0 rounded-none">
                     <SelectValue placeholder="State" />
                 </SelectTrigger>
                 <SelectContent>
                     {/* <SelectItem value="">State</SelectItem> */}
-                    {indianStates.map((state) => (
+                    {states.map((state) => (
                         <SelectItem key={state.isoCode} value={state.name}>
                             {state.name}
                         </SelectItem>

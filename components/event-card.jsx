@@ -54,7 +54,9 @@ export default function EventCard({
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                             <MapPin className="w-3 h-3" />
                             <span className="line-clamp-1">
-                                {event.locationType === "online" ? "Online Event" : event.city}
+                                {event.locationType === "online"
+                                    ? "Online Event"
+                                    : `${event.city}, ${event.state || event.country || ""}`}
                             </span>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">

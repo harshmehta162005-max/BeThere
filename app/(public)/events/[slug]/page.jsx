@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/data";
 import RegisterModal from "./_components/register-modal";
+import ReactMarkdown from "react-markdown";
 
 // Utility function to darken a color
 function darkenColor(color, amount) {
@@ -156,9 +157,9 @@ export default function EventDetailPage() {
                         >
                             <CardContent className="pt-6">
                                 <h2 className="text-2xl font-bold mb-4">About This Event</h2>
-                                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                                    {event.description}
-                                </p>
+                                <div className="prose prose-invert max-w-none text-muted-foreground">
+                                    <ReactMarkdown>{event.description}</ReactMarkdown>
+                                </div>
                             </CardContent>
                         </Card>
 

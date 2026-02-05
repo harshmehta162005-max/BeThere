@@ -5,7 +5,7 @@ import { MapPin, Heart, ArrowRight, ArrowLeft } from "lucide-react";
 import { useConvexMutation } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
-import { State, City } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 import {
     Dialog,
     DialogContent,
@@ -30,9 +30,10 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
     const [step, setStep] = useState(1);
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [location, setLocation] = useState({
+        countryCode: "IN",
+        country: "India",
         state: "",
         city: "",
-        country: "India",
     });
 
     const { mutate: completeOnboarding, isLoading } = useConvexMutation(
@@ -40,17 +41,19 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
     );
 
     // Get Indian states
-    const indianStates = useMemo(() => {
-        return State.getStatesOfCountry("IN");
-    }, []);
+    const countries = useMemo(() => Country.getAllCountries(), []);
+
+    const states = useMemo(() => {
+        return State.getStatesOfCountry(location.countryCode);
+    }, [location.countryCode]);
 
     // Get cities based on selected state
     const cities = useMemo(() => {
         if (!location.state) return [];
-        const selectedState = indianStates.find((s) => s.name === location.state);
+        const selectedState = states.find((s) => s.name === location.state);
         if (!selectedState) return [];
-        return City.getCitiesOfState("IN", selectedState.isoCode);
-    }, [location.state, indianStates]);
+        return City.getCitiesOfState(location.countryCode, selectedState.isoCode);
+    }, [location.state, location.countryCode, states]);
 
     const toggleInterest = (categoryId) => {
         setSelectedInterests((prev) =>
@@ -163,60 +166,91 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }) {
                     {/* Step 2: Location */}
                     {step === 2 && (
                         <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="state">State</Label>
-                                    <Select
-                                        value={location.state}
-                                        onValueChange={(value) => {
-                                            setLocation({ ...location, state: value, city: "" });
-                                        }}
-                                    >
-                                        <SelectTrigger id="state" className="h-11 w-full">
-                                            <SelectValue placeholder="Select state" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {indianStates.map((state) => (
-                                                <SelectItem key={state.isoCode} value={state.name}>
-                                                    {state.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="city">City</Label>
-                                    <Select
-                                        value={location.city}
-                                        onValueChange={(value) =>
-                                            setLocation({ ...location, city: value })
-                                        }
-                                        disabled={!location.state}
-                                    >
-                                        <SelectTrigger id="city" className="h-11 w-full">
-                                            <SelectValue
-                                                placeholder={
-                                                    location.state ? "Select city" : "State first"
-                                                }
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {cities.length > 0 ? (
-                                                cities.map((city) => (
-                                                    <SelectItem key={city.name} value={city.name}>
-                                                        {city.name}
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <SelectItem value="no-cities" disabled>
-                                                    No cities available
-                                                </SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="country">Country</Label>
+                                <Select
+                                    value={location.countryCode}
+                                    onValueChange={(value) => {
+                                        const country = countries.find(
+                                            (c) => c.isoCode === value
+                                        );
+                                        setLocation({
+                                            countryCode: value,
+                                            country: country?.name || "India",
+                                            state: "",
+                                            city: "",
+                                        });
+                                    }}
+                                >
+                                    <SelectTrigger id="country" className="h-11 w-full">
+                                        <SelectValue placeholder="Select country" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {countries.map((country) => (
+                                            <SelectItem
+                                                key={country.isoCode}
+                                                value={country.isoCode}
+                                            >
+                                                {country.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="state">State</Label>
+                                <Select
+                                    value={location.state}
+                                    onValueChange={(value) => {
+                                        setLocation({ ...location, state: value, city: "" });
+                                    }}
+                                >
+                                    <SelectTrigger id="state" className="h-11 w-full">
+                                        <SelectValue placeholder="Select state" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {states.map((state) => (
+                                            <SelectItem key={state.isoCode} value={state.name}>
+                                                {state.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="city">City</Label>
+                                <Select
+                                    value={location.city}
+                                    onValueChange={(value) =>
+                                        setLocation({ ...location, city: value })
+                                    }
+                                    disabled={!location.state}
+                                >
+                                    <SelectTrigger id="city" className="h-11 w-full">
+                                        <SelectValue
+                                            placeholder={
+                                                location.state ? "Select city" : "State first"
+                                            }
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {cities.length > 0 ? (
+                                            cities.map((city) => (
+                                                <SelectItem key={city.name} value={city.name}>
+                                                    {city.name}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <SelectItem value="no-cities" disabled>
+                                                No cities available
+                                            </SelectItem>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
 
                             {location.city && location.state && (
                                 <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">

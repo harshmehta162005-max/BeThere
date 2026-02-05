@@ -69,8 +69,14 @@ export default function Header() {
                         <Button variant="ghost" size="sm" asChild className={"mr-2"}>
                             <Link href="/explore">Explore</Link>
                         </Button>
+                        <Button variant="ghost" size="sm" asChild className={"mr-2"}>
+                            <Link href="/sydney">Sydney</Link>
+                        </Button>
 
                         <Authenticated>
+                            <Button variant="ghost" size="sm" asChild className={"mr-2"}>
+                                <Link href="/dashboard">Dashboard</Link>
+                            </Button>
                             {/* Create Event Button */}
                             <Button size="sm" asChild className="flex gap-2 mr-4">
                                 <Link href="/create-event">

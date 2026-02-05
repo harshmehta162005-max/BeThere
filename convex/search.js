@@ -11,8 +11,11 @@ export const searchEvents = query({
             return [];
         }
         const now = Date.now();
-        const searchResults = await ctx.db.query("events")
-            .withIndex("search_title", (q) => q.search("title", args.query))
+        const searchResults = await ctx.db
+            .query("events")
+            .withSearchIndex("search_title", (q) =>
+                q.search("title", args.query)
+            )
             .filter((q) => q.gte(q.field("startDate"), now))
             .take(args.limit ?? 5);
 

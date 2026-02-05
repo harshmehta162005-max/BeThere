@@ -41,6 +41,7 @@ export default function ExplorePage() {
         {
             city: currentUser?.location?.city || "Gurugram",
             state: currentUser?.location?.state || "Haryana",
+            country: currentUser?.location?.country || "India",
             limit: 4,
         }
     );
@@ -65,7 +66,8 @@ export default function ExplorePage() {
     const handleViewLocalEvents = () => {
         const city = currentUser?.location?.city || "Gurugram";
         const state = currentUser?.location?.state || "Haryana";
-        const slug = createLocationSlug(city, state);
+        const country = currentUser?.location?.country || "India";
+        const slug = createLocationSlug(city, state, country);
         router.push(`/explore/${slug}`);
     };
 
@@ -93,7 +95,7 @@ export default function ExplorePage() {
                 <h1 className="text-5xl md:text-6xl font-bold mb-4">Discover Events</h1>
                 <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                     Explore featured events, find what&apos;s happening locally, or browse
-                    events across India
+                    events across regions
                 </p>
             </div>
 
@@ -230,8 +232,8 @@ export default function ExplorePage() {
             {popularEvents && popularEvents.length > 0 && (
                 <div className="mb-16">
                     <div className="mb-6">
-                        <h2 className="text-3xl font-bold mb-1">Popular Across India</h2>
-                        <p className="text-muted-foreground">Trending events nationwide</p>
+                <h2 className="text-3xl font-bold mb-1">Popular Across Regions</h2>
+                <p className="text-muted-foreground">Trending events worldwide</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

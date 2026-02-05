@@ -1,13 +1,13 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { State, City } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 import { CalendarIcon, Loader2, Sparkles } from "lucide-react";
 import { useConvexMutation, useConvexQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
@@ -53,6 +53,7 @@ const eventSchema = z.object({
     locationType: z.enum(["physical", "online"]).default("physical"),
     venue: z.string().url("Must be a valid URL").optional().or(z.literal("")),
     address: z.string().optional(),
+    country: z.string().min(1, "Country is required"),
     city: z.string().min(1, "City is required"),
     state: z.string().optional(),
     capacity: z.number().min(1, "Capacity must be at least 1"),
@@ -92,6 +93,7 @@ export default function CreateEventPage() {
             capacity: 50,
             themeColor: "#1e3a8a",
             category: "",
+            country: "India",
             state: "",
             city: "",
             startTime: "",
@@ -106,13 +108,30 @@ export default function CreateEventPage() {
     const endDate = watch("endDate");
     const coverImage = watch("coverImage");
 
-    const indianStates = useMemo(() => State.getStatesOfCountry("IN"), []);
+    const countries = useMemo(() => Country.getAllCountries(), []);
+    const [selectedCountryCode, setSelectedCountryCode] = useState("IN");
+    const states = useMemo(
+        () => State.getStatesOfCountry(selectedCountryCode),
+        [selectedCountryCode]
+    );
     const cities = useMemo(() => {
         if (!selectedState) return [];
-        const st = indianStates.find((s) => s.name === selectedState);
+        const st = states.find((s) => s.name === selectedState);
         if (!st) return [];
-        return City.getCitiesOfState("IN", st.isoCode);
-    }, [selectedState, indianStates]);
+        return City.getCitiesOfState(selectedCountryCode, st.isoCode);
+    }, [selectedState, selectedCountryCode, states]);
+
+    // Sync defaults from user profile
+    useEffect(() => {
+        if (!currentUser?.location) return;
+        const countryCode =
+            countries.find((c) => c.name === currentUser.location.country)?.isoCode ||
+            "IN";
+        setSelectedCountryCode(countryCode);
+        setValue("country", currentUser.location.country);
+        setValue("state", currentUser.location.state || "");
+        setValue("city", currentUser.location.city || "");
+    }, [currentUser, countries, setValue]);
 
     // Color presets - show all for Pro, only default for Free
     const colorPresets = [
@@ -166,7 +185,7 @@ export default function CreateEventPage() {
                 return;
             }
 
-            await createEvent({
+                await createEvent({
                 title: data.title,
                 description: data.description,
                 category: data.category,
@@ -179,7 +198,7 @@ export default function CreateEventPage() {
                 address: data.address || undefined,
                 city: data.city,
                 state: data.state || undefined,
-                country: "India",
+                country: data.country,
                 capacity: data.capacity,
                 ticketType: data.ticketType,
                 ticketPrice: data.ticketPrice || undefined,
@@ -417,7 +436,39 @@ export default function CreateEventPage() {
                     {/* Location */}
                     <div className="space-y-3">
                         <Label className="text-sm">Location</Label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <Controller
+                                control={control}
+                                name="country"
+                                render={({ field }) => (
+                                    <Select
+                                        value={selectedCountryCode}
+                                        onValueChange={(value) => {
+                                            setSelectedCountryCode(value);
+                                            const countryName =
+                                                countries.find((c) => c.isoCode === value)
+                                                    ?.name || "India";
+                                            field.onChange(countryName);
+                                            setValue("state", "");
+                                            setValue("city", "");
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select country" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {countries.map((country) => (
+                                                <SelectItem
+                                                    key={country.isoCode}
+                                                    value={country.isoCode}
+                                                >
+                                                    {country.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
                             <Controller
                                 control={control}
                                 name="state"
@@ -433,7 +484,7 @@ export default function CreateEventPage() {
                                             <SelectValue placeholder="Select state" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {indianStates.map((s) => (
+                                            {states.map((s) => (
                                                 <SelectItem key={s.isoCode} value={s.name}>
                                                     {s.name}
                                                 </SelectItem>

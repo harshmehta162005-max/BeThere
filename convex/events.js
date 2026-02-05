@@ -54,8 +54,9 @@ export const createEvent = mutation({
                 .replace(/(^-|-$)/g, "");
 
             // Create event
+            const { hasPro: _hasPro, ...eventArgs } = args;
             const eventId = await ctx.db.insert("events", {
-                ...args,
+                ...eventArgs,
                 themeColor, // Use validated color
                 slug: `${slug}-${Date.now()}`,
                 organizerId: user._id,

@@ -173,7 +173,7 @@ export const getEventRegistrations = query({
     handler: async (ctx, args) => {
         const user = await ctx.runQuery(internal.users.getCurrentUser);
 
-        const event = await ctx.db.get(registration.eventId);
+        const event = await ctx.db.get(args.eventId);
         if (!event) {
             throw new Error("Event not found for this registration");
         }
