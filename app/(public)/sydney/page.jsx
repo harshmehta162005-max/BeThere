@@ -51,22 +51,22 @@ export default function SydneyEventsPage() {
     }
 
     return (
-        <div className="min-h-screen pb-20 px-4">
+        <div className="min-h-screen pb-20 px-4 sm:px-6">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8 text-center">
-                    <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground mb-3">
+                    <p className="text-[11px] sm:text-sm uppercase tracking-[0.3em] text-muted-foreground mb-3">
                         Sydney, Australia
                     </p>
-                    <h1 className="text-4xl md:text-5xl font-bold mb-3">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
                         Sydney Events Radar
                     </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
+                    <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
                         Automatically curated events updated throughout the day from top
                         public listings.
                     </p>
                 </div>
 
-                <div className="mb-6 grid grid-cols-1 md:grid-cols-[1.2fr_1fr_1fr_160px] gap-3">
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_200px] gap-3">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -87,7 +87,7 @@ export default function SydneyEventsPage() {
                         onChange={(e) => setEndDate(e.target.value)}
                     />
                     <select
-                        className="h-9 rounded-md border bg-background text-foreground px-3 text-sm"
+                        className="h-9 rounded-md border bg-background text-foreground px-3 text-sm w-full"
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
                     >
@@ -100,7 +100,7 @@ export default function SydneyEventsPage() {
                 </div>
 
                 {filteredEvents?.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {filteredEvents.map((event) => (
                             <ScrapedEventCard key={event._id} event={event} />
                         ))}
